@@ -1,0 +1,58 @@
+{
+  "name": "todatetime",
+  "version": "1.0.0",
+  "description": "Strict, immutable, zero-dependency date and time utilities for JavaScript and TypeScript",
+  "license": "MIT",
+  "author": "Erik Karwatowski",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/erikleon/todatetime.git"
+  },
+  "bugs": "https://github.com/erikleon/todatetime/issues",
+  "homepage": "https://github.com/erikleon/todatetime#readme",
+  "type": "module",
+  "sideEffects": false,
+  "engines": {
+    "node": ">=22"
+  },
+  "files": [
+    "dist"
+  ],
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "scripts": {
+    "build": "tsup && tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "lint": "biome check .",
+    "format": "biome check --write .",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "test:browser": "vitest run --config vitest.browser.config.ts",
+    "test:package": "node scripts/test-package.mjs",
+    "test:performance": "vitest run tests/performance.test.ts",
+    "check": "npm run lint && npm run typecheck && npm run test:coverage && npm run build && npm run test:package",
+    "prepack": "npm run check"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.5.8",
+    "@vitest/browser-playwright": "4.1.10",
+    "@vitest/coverage-v8": "4.1.10",
+    "fast-check": "4.9.0",
+    "playwright": "1.62.1",
+    "tsup": "8.5.1",
+    "typescript": "7.0.2",
+    "vitest": "4.1.10"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  }
+}

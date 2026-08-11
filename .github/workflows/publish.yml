@@ -25,6 +25,12 @@ jobs:
       - run: npm run check
       - run: npx playwright install --with-deps chromium firefox webkit
       - run: npm run test:browser
-      - run: npm publish --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - name: Check whether this version is already on the registry
+        id: registry
+        run: |
+          name=$(node -p 'require("./package.json").name')
+          version=$(node -p 'require("./package.json").version')
+          npm view "$name@$version" version >/dev/null 2>&1 && published=true || published=false
+          echo "published=$published" >> "$GITHUB_OUTPUT"
+      - if: steps.registry.outputs.published == 'false'
+        run: npm publish --access public

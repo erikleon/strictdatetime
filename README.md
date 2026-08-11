@@ -1,11 +1,11 @@
-# todatetime
+# strictdatetime
 
 Strict, immutable date and time utilities for JavaScript and TypeScript with zero runtime dependencies.
 
-[Documentation](https://erikleon.github.io/todatetime/) · [npm](https://www.npmjs.com/package/todatetime)
+[Documentation](https://erikleon.github.io/todatetime/) · [npm](https://www.npmjs.com/package/strictdatetime)
 
 ```bash
-npm install todatetime
+npm install strictdatetime
 ```
 
 ```ts
@@ -15,7 +15,7 @@ import {
   parsePlainDateTime,
   resolveZonedDateTime,
   toZonedDateTimeString,
-} from "todatetime";
+} from "strictdatetime";
 
 const meeting = resolveZonedDateTime(
   parsePlainDateTime("2026-03-07T12:00:00.000"),

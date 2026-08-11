@@ -5,7 +5,7 @@ import { join, resolve } from "node:path";
 import { gzipSync } from "node:zlib";
 
 const root = resolve(import.meta.dirname, "..");
-const temporary = mkdtempSync(join(tmpdir(), "todatetime-package-"));
+const temporary = mkdtempSync(join(tmpdir(), "strictdatetime-package-"));
 
 function run(command, args, cwd = root) {
   return execFileSync(command, args, {
@@ -34,22 +34,22 @@ try {
     JSON.stringify({
       private: true,
       type: "module",
-      dependencies: { todatetime: `file:${tarball}` },
+      dependencies: { strictdatetime: `file:${tarball}` },
     }),
   );
   run("npm", ["install", "--ignore-scripts", "--no-package-lock", "--no-audit"], consumer);
 
   writeFileSync(
     join(consumer, "esm.mjs"),
-    'import { parseInstant, toInstantString } from "todatetime";\nif (toInstantString(parseInstant("2026-08-10T12:00:00Z")) !== "2026-08-10T12:00:00.000Z") process.exit(1);\n',
+    'import { parseInstant, toInstantString } from "strictdatetime";\nif (toInstantString(parseInstant("2026-08-10T12:00:00Z")) !== "2026-08-10T12:00:00.000Z") process.exit(1);\n',
   );
   writeFileSync(
     join(consumer, "cjs.cjs"),
-    'const { parseInstant, toInstantString } = require("todatetime");\nif (toInstantString(parseInstant("2026-08-10T12:00:00Z")) !== "2026-08-10T12:00:00.000Z") process.exit(1);\n',
+    'const { parseInstant, toInstantString } = require("strictdatetime");\nif (toInstantString(parseInstant("2026-08-10T12:00:00Z")) !== "2026-08-10T12:00:00.000Z") process.exit(1);\n',
   );
   writeFileSync(
     join(consumer, "types.ts"),
-    'import { parseInstant, type Instant } from "todatetime";\nconst value: Instant = parseInstant("2026-08-10T12:00:00Z");\nvoid value;\n',
+    'import { parseInstant, type Instant } from "strictdatetime";\nconst value: Instant = parseInstant("2026-08-10T12:00:00Z");\nvoid value;\n',
   );
   run(process.execPath, ["esm.mjs"], consumer);
   run(process.execPath, ["cjs.cjs"], consumer);

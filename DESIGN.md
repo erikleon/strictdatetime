@@ -1,4 +1,4 @@
-# Design System — todatetime
+# Design System — strictdatetime
 
 ## Product Context
 

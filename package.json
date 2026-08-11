@@ -1,5 +1,5 @@
 {
-  "name": "todatetime",
+  "name": "strictdatetime",
   "version": "1.0.0",
   "description": "Strict, immutable, zero-dependency date and time utilities for JavaScript and TypeScript",
   "license": "MIT",

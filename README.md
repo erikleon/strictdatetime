@@ -2,6 +2,8 @@
 
 Strict, immutable date and time utilities for JavaScript and TypeScript with zero runtime dependencies.
 
+[Documentation](https://erikleon.github.io/todatetime/) · [npm](https://www.npmjs.com/package/todatetime)
+
 ```bash
 npm install todatetime
 ```

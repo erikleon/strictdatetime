@@ -5,10 +5,12 @@ Branch: main
 
 ## Affected Pages/Routes
 
-- None. This package has no UI or routes.
+- `/todatetime/`: static package marketing and quick-start documentation on GitHub Pages.
 
 ## Key Interactions to Verify
 
+- Responsive navigation, npm/GitHub/documentation links, and install-command copy feedback.
+- Quick-start examples match the package's strict public record contracts.
 - Typed parsing and canonical serialization for every public value.
 - Unique, missing, and duplicated IANA wall-time resolution.
 - Exact versus calendar arithmetic across DST and month boundaries.
@@ -17,6 +19,7 @@ Branch: main
 
 ## Edge Cases
 
+- Site layout at 390px and 1440px, keyboard focus visibility, reduced motion, and unavailable clipboard access.
 - Leap years, year 0000, year 9999, invalid month/day/time, and unsafe integers.
 - Millisecond precision and non-zero finer fractions.
 - New York hour gaps/overlaps, Lord Howe half-hour changes, and Apia date-line changes.

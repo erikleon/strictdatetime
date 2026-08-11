@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="todatetime is a strict, immutable, zero-dependency date and time library for JavaScript and TypeScript."
+    />
+    <meta name="theme-color" content="#f4efe5" />
+    <meta property="og:title" content="todatetime" />
+    <meta
+      property="og:description"
+      content="Date and time without hidden correction. Strict, immutable, and zero dependency."
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://erikleon.github.io/todatetime/" />
+    <title>todatetime — strict date and time for JavaScript</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+    <script src="./app.js" defer></script>
+  </head>
+  <body>
+    <header class="site-header shell">
+      <a class="wordmark" href="#top" aria-label="todatetime home">to<span>datetime</span></a>
+      <nav aria-label="Primary navigation">
+        <a href="#start">Quick start</a>
+        <a href="#principles">Principles</a>
+        <a href="https://github.com/erikleon/todatetime">GitHub</a>
+      </nav>
+    </header>
+
+    <main id="top">
+      <section class="hero shell">
+        <div class="eyebrow"><span></span> MIT licensed · v1.0.0</div>
+        <h1>Date and time<br />without hidden correction.</h1>
+        <p class="lede">
+          Strict, immutable utilities for JavaScript and TypeScript. Exact elapsed time stays
+          separate from calendar wall time, ambiguous input rejects by default, and the runtime
+          dependency count stays at zero.
+        </p>
+        <div class="actions">
+          <a class="button primary" href="#start">Read the quick start</a>
+          <a class="button secondary" href="https://www.npmjs.com/package/todatetime">View on npm</a>
+        </div>
+        <dl class="facts" aria-label="Package facts">
+          <div><dt>0</dt><dd>runtime dependencies</dd></div>
+          <div><dt>100%</dt><dd>runtime test coverage</dd></div>
+          <div><dt>ESM + CJS</dt><dd>with TypeScript declarations</dd></div>
+        </dl>
+      </section>
+
+      <section class="quick-start shell" id="start">
+        <div class="section-label">01 / Quick start</div>
+        <div class="quick-grid">
+          <div>
+            <h2>Install it. Keep control.</h2>
+            <p>
+              Parse strict values, resolve a civil time in an IANA zone, then choose exact or
+              calendar arithmetic explicitly.
+            </p>
+            <div class="install-line">
+              <code>npm install todatetime</code>
+              <button type="button" data-copy="npm install todatetime" aria-label="Copy install command">
+                Copy
+              </button>
+            </div>
+          </div>
+          <figure class="code-window" aria-label="TypeScript example">
+            <div class="code-title"><span>example.ts</span><span>TypeScript</span></div>
+            <pre><code><span class="kw">import</span> {
+  addCalendarToZonedDateTime,
+  createCalendarDuration,
+  parsePlainDateTime,
+  resolveZonedDateTime,
+  toZonedDateTimeString,
+} <span class="kw">from</span> <span class="str">"todatetime"</span>;
+
+<span class="kw">const</span> meeting = resolveZonedDateTime(
+  parsePlainDateTime(<span class="str">"2026-03-07T12:00:00.000"</span>),
+  <span class="str">"America/New_York"</span>,
+);
+
+<span class="kw">const</span> tomorrow = addCalendarToZonedDateTime(
+  meeting,
+  createCalendarDuration({
+    years: <span class="num">0</span>, months: <span class="num">0</span>, weeks: <span class="num">0</span>, days: <span class="num">1</span>,
+  }),
+);
+
+toZonedDateTimeString(tomorrow);
+<span class="comment">// 2026-03-08T12:00:00.000-04:00[America/New_York]</span></code></pre>
+          </figure>
+        </div>
+      </section>
+
+      <section class="principles shell" id="principles">
+        <div class="section-label">02 / Design principles</div>
+        <div class="principle-list">
+          <article>
+            <span>Strict inputs</span>
+            <h3>Invalid means invalid.</h3>
+            <p>Typed ISO parsers reject ambiguous correction, unknown annotations, and precision the library cannot preserve.</p>
+          </article>
+          <article>
+            <span>Honest arithmetic</span>
+            <h3>Elapsed time is not wall time.</h3>
+            <p>Exact durations and calendar durations use separate APIs, so daylight-saving transitions cannot hide in a generic add call.</p>
+          </article>
+          <article>
+            <span>Structural values</span>
+            <h3>Plain data, frozen.</h3>
+            <p>Values are immutable records with explicit validation. No runtime identity, mutable objects, or cross-bundle instanceof traps.</p>
+          </article>
+          <article>
+            <span>Host-native zones</span>
+            <h3>No bundled timezone database.</h3>
+            <p>IANA behavior comes from the host runtime’s Intl data, keeping the package small while making timezone ownership explicit.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="reference shell">
+        <div class="section-label">03 / Capability map</div>
+        <div class="reference-grid">
+          <h2>A focused core for the difficult parts.</h2>
+          <ul>
+            <li><span>Values</span> Instant, PlainDate, PlainTime, PlainDateTime, ZonedDateTime</li>
+            <li><span>Parsing</span> Strict ISO and an intentional RFC 9557 subset</li>
+            <li><span>Zones</span> IANA names and fixed offsets with explicit disambiguation</li>
+            <li><span>Arithmetic</span> Exact and calendar add, subtract, compare, and difference</li>
+            <li><span>Formatting</span> Canonical serialization and locale-aware Intl output</li>
+            <li><span>Errors</span> Stable DateTimeError codes across ESM and CommonJS</li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="closing shell">
+        <p>Node.js 22+ · Current Chromium, Firefox, and WebKit · MIT</p>
+        <h2>Make date and time behavior visible in the code.</h2>
+        <div class="actions">
+          <a class="button primary" href="https://www.npmjs.com/package/todatetime">Install from npm</a>
+          <a class="button secondary" href="https://github.com/erikleon/todatetime#readme">Read full documentation</a>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer shell">
+      <span>todatetime</span>
+      <span>MIT © 2026 Erik Karwatowski</span>
+    </footer>
+  </body>
+</html>

@@ -6,10 +6,10 @@
   "author": "Erik Karwatowski",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/erikleon/todatetime.git"
+    "url": "git+https://github.com/erikleon/strictdatetime.git"
   },
-  "bugs": "https://github.com/erikleon/todatetime/issues",
-  "homepage": "https://github.com/erikleon/todatetime#readme",
+  "bugs": "https://github.com/erikleon/strictdatetime/issues",
+  "homepage": "https://github.com/erikleon/strictdatetime#readme",
   "type": "module",
   "sideEffects": false,
   "engines": {

@@ -5,7 +5,7 @@ Branch: main
 
 ## Affected Pages/Routes
 
-- `/todatetime/`: static package marketing and quick-start documentation on GitHub Pages.
+- `/strictdatetime/`: static package marketing and quick-start documentation on GitHub Pages.
 
 ## Key Interactions to Verify
 

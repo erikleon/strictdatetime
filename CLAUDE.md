@@ -37,16 +37,16 @@ site's aesthetic direction are defined there. Do not deviate without explicit us
 ## Deploy Configuration (configured by /setup-deploy)
 
 - Platform: GitHub Pages via GitHub Actions
-- Production URL: https://erikleon.github.io/todatetime/
+- Production URL: https://erikleon.github.io/strictdatetime/
 - Deploy workflow: `.github/workflows/pages.yml`
 - Deploy status command: `gh run list --workflow pages.yml --limit 1`
 - Merge method: direct push to `main`
 - Project type: static documentation site and npm library
-- Post-deploy health check: `https://erikleon.github.io/todatetime/`
+- Post-deploy health check: `https://erikleon.github.io/strictdatetime/`
 
 ### Custom deploy hooks
 
 - Pre-merge: `npm run check`
 - Deploy trigger: automatic on changes to `docs/` or the Pages workflow pushed to `main`
 - Deploy status: poll the Pages workflow, then request the production URL
-- Health check: `curl -fsS https://erikleon.github.io/todatetime/`
+- Health check: `curl -fsS https://erikleon.github.io/strictdatetime/`

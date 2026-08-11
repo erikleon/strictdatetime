@@ -2,7 +2,7 @@
 
 Strict, immutable date and time utilities for JavaScript and TypeScript with zero runtime dependencies.
 
-[Documentation](https://erikleon.github.io/todatetime/) · [npm](https://www.npmjs.com/package/strictdatetime)
+[Documentation](https://erikleon.github.io/strictdatetime/) · [npm](https://www.npmjs.com/package/strictdatetime)
 
 ```bash
 npm install strictdatetime

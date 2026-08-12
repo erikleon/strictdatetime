@@ -7,6 +7,15 @@ import { gzipSync } from "node:zlib";
 const root = resolve(import.meta.dirname, "..");
 const temporary = mkdtempSync(join(tmpdir(), "strictdatetime-package-"));
 
+// On Windows npm and tsc are .cmd shims, which execFileSync refuses to spawn without a shell.
+// Both are Node programs, so their entry scripts run through the current node binary on every
+// platform instead. npm sets npm_execpath to its own CLI when it runs a package script.
+const npmCli = process.env.npm_execpath;
+if (!npmCli) {
+  throw new Error("npm_execpath is unset. Run this through npm, for example `npm run test:package`.");
+}
+const tscCli = join(root, "node_modules/typescript/bin/tsc");
+
 function run(command, args, cwd = root) {
   return execFileSync(command, args, {
     cwd,
@@ -18,7 +27,7 @@ function run(command, args, cwd = root) {
 
 try {
   const packed = JSON.parse(
-    run("npm", ["pack", "--ignore-scripts", "--json", "--pack-destination", temporary]),
+    run(process.execPath, [npmCli, "pack", "--ignore-scripts", "--json", "--pack-destination", temporary]),
   );
   const tarball = join(temporary, packed[0].filename);
   const stat = packed[0];
@@ -37,7 +46,11 @@ try {
       dependencies: { strictdatetime: `file:${tarball}` },
     }),
   );
-  run("npm", ["install", "--ignore-scripts", "--no-package-lock", "--no-audit"], consumer);
+  run(
+    process.execPath,
+    [npmCli, "install", "--ignore-scripts", "--no-package-lock", "--no-audit"],
+    consumer,
+  );
 
   writeFileSync(
     join(consumer, "esm.mjs"),
@@ -54,8 +67,8 @@ try {
   run(process.execPath, ["esm.mjs"], consumer);
   run(process.execPath, ["cjs.cjs"], consumer);
   run(
-    join(root, "node_modules/.bin/tsc"),
-    ["--noEmit", "--strict", "--target", "ES2022", "--module", "NodeNext", "types.ts"],
+    process.execPath,
+    [tscCli, "--noEmit", "--strict", "--target", "ES2022", "--module", "NodeNext", "types.ts"],
     consumer,
   );
 

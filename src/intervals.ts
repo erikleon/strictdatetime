@@ -151,6 +151,169 @@ export function zonedDateTimeIntervalsOverlap(
   );
 }
 
+type EpochBounds = { start: number; end: number };
+
+function intersectionBounds(left: EpochBounds, right: EpochBounds): EpochBounds | undefined {
+  if (!overlaps(left, right)) return undefined;
+  return {
+    start: Math.max(left.start, right.start),
+    end: Math.min(left.end, right.end),
+  };
+}
+
+/**
+ * Shared part of two ranges, or `undefined` when they share no instant. Touching ranges such as
+ * `[a, b)` and `[b, c)` meet at a point the half-open form excludes from both, so they intersect
+ * in nothing rather than in an empty range at `b`.
+ */
+export function instantIntervalIntersection(
+  left: InstantInterval,
+  right: InstantInterval,
+): InstantInterval | undefined {
+  const bounds = intersectionBounds(
+    epochBounds(createInstantInterval(left)),
+    epochBounds(createInstantInterval(right)),
+  );
+  if (bounds === undefined) return undefined;
+  return createInstantInterval({
+    start: createInstant(bounds.start),
+    end: createInstant(bounds.end),
+  });
+}
+
+/**
+ * The two ranges may use different zones because the overlap is decided on the elapsed timeline.
+ * The result carries the zone of `left`, matching how {@link clampZonedDateTime} keeps the zone of
+ * the value it clamps.
+ */
+export function zonedDateTimeIntervalIntersection(
+  left: ZonedDateTimeInterval,
+  right: ZonedDateTimeInterval,
+): ZonedDateTimeInterval | undefined {
+  const first = createZonedDateTimeInterval(left);
+  const bounds = intersectionBounds(
+    epochBounds(first),
+    epochBounds(createZonedDateTimeInterval(right)),
+  );
+  if (bounds === undefined) return undefined;
+  const zone = first.start.timeZone;
+  return createZonedDateTimeInterval({
+    start: zonedDateTimeFromInstant({ epochMilliseconds: bounds.start }, zone),
+    end: zonedDateTimeFromInstant({ epochMilliseconds: bounds.end }, zone),
+  });
+}
+
+function gapBounds(left: EpochBounds, right: EpochBounds): EpochBounds | undefined {
+  const [earlier, later] = left.start <= right.start ? [left, right] : [right, left];
+  if (later.start <= earlier.end) return undefined;
+  return { start: earlier.end, end: later.start };
+}
+
+/**
+ * Range strictly between two disjoint ranges, or `undefined` when they overlap or merely touch.
+ * Argument order does not matter. A gap always has positive length, so touching ranges report no
+ * gap rather than an empty one.
+ */
+export function instantIntervalGap(
+  left: InstantInterval,
+  right: InstantInterval,
+): InstantInterval | undefined {
+  const bounds = gapBounds(
+    epochBounds(createInstantInterval(left)),
+    epochBounds(createInstantInterval(right)),
+  );
+  if (bounds === undefined) return undefined;
+  return createInstantInterval({
+    start: createInstant(bounds.start),
+    end: createInstant(bounds.end),
+  });
+}
+
+/** The result carries the zone of `left`, matching {@link zonedDateTimeIntervalIntersection}. */
+export function zonedDateTimeIntervalGap(
+  left: ZonedDateTimeInterval,
+  right: ZonedDateTimeInterval,
+): ZonedDateTimeInterval | undefined {
+  const first = createZonedDateTimeInterval(left);
+  const bounds = gapBounds(epochBounds(first), epochBounds(createZonedDateTimeInterval(right)));
+  if (bounds === undefined) return undefined;
+  const zone = first.start.timeZone;
+  return createZonedDateTimeInterval({
+    start: zonedDateTimeFromInstant({ epochMilliseconds: bounds.start }, zone),
+    end: zonedDateTimeFromInstant({ epochMilliseconds: bounds.end }, zone),
+  });
+}
+
+/**
+ * Reduces spans to the fewest ranges covering the same instants, ordered by start.
+ *
+ * Touching ranges merge: `[a, b)` and `[b, c)` cover exactly `[a, c)` under half-open semantics, so
+ * keeping them apart would describe one span with two records. Empty ranges cover no instant and
+ * drop out.
+ */
+function mergeBounds(values: readonly EpochBounds[]): EpochBounds[] {
+  const spans = values.filter((span) => span.end > span.start);
+  spans.sort((left, right) => left.start - right.start || left.end - right.end);
+  const merged: EpochBounds[] = [];
+  for (const span of spans) {
+    const last = merged[merged.length - 1];
+    if (last === undefined || span.start > last.end) {
+      merged.push(span);
+    } else if (span.end > last.end) {
+      merged[merged.length - 1] = { start: last.start, end: span.end };
+    }
+  }
+  return merged;
+}
+
+function assertIntervalArray(values: readonly unknown[]): readonly unknown[] {
+  if (!Array.isArray(values)) fail("INVALID_TYPE", "intervals must be an array");
+  return values;
+}
+
+/** Empty ranges drop out, and touching ranges merge, so the result is disjoint and non-adjacent. */
+export function mergeInstantIntervals(
+  intervals: readonly InstantInterval[],
+): readonly InstantInterval[] {
+  const bounds = assertIntervalArray(intervals).map((value) =>
+    epochBounds(createInstantInterval(value as InstantInterval)),
+  );
+  return Object.freeze(
+    mergeBounds(bounds).map((span) =>
+      createInstantInterval({ start: createInstant(span.start), end: createInstant(span.end) }),
+    ),
+  );
+}
+
+/**
+ * Every range must already share one zone. Merging across zones would leave the zone of the result
+ * depending on sort order, which is exactly the kind of implicit choice this library rejects.
+ * Convert with `withTimeZone` first when the inputs disagree.
+ */
+export function mergeZonedDateTimeIntervals(
+  intervals: readonly ZonedDateTimeInterval[],
+): readonly ZonedDateTimeInterval[] {
+  const records = assertIntervalArray(intervals).map((value) =>
+    createZonedDateTimeInterval(value as ZonedDateTimeInterval),
+  );
+  const first = records[0];
+  if (first === undefined) return Object.freeze([]);
+  const zone = first.start.timeZone;
+  for (const record of records) {
+    if (record.start.timeZone !== zone) {
+      fail("INVALID_RECORD", "mergeZonedDateTimeIntervals requires one shared time zone");
+    }
+  }
+  return Object.freeze(
+    mergeBounds(records.map(epochBounds)).map((span) =>
+      createZonedDateTimeInterval({
+        start: zonedDateTimeFromInstant({ epochMilliseconds: span.start }, zone),
+        end: zonedDateTimeFromInstant({ epochMilliseconds: span.end }, zone),
+      }),
+    ),
+  );
+}
+
 function extreme<T extends { epochMilliseconds: number }>(
   values: readonly unknown[],
   direction: -1 | 1,

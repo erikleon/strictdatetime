@@ -10,9 +10,13 @@ import {
   type IntervalUnit,
   instantIntervalContains,
   instantIntervalDuration,
+  instantIntervalGap,
+  instantIntervalIntersection,
   instantIntervalsOverlap,
   maximumInstant,
   maximumZonedDateTime,
+  mergeInstantIntervals,
+  mergeZonedDateTimeIntervals,
   minimumInstant,
   minimumZonedDateTime,
   parseInstant,
@@ -27,10 +31,12 @@ import {
   withTimeZone,
   zonedDateTimeIntervalContains,
   zonedDateTimeIntervalDuration,
+  zonedDateTimeIntervalGap,
+  zonedDateTimeIntervalIntersection,
   zonedDateTimeIntervalsOverlap,
   zonedDateTimeUnitInterval,
 } from "../src/index.js";
-import { expectDateTimeError } from "./helpers.js";
+import { defined, expectDateTimeError } from "./helpers.js";
 
 const instant = (value: string) => parseInstant(value);
 const zoned = (wall: string, zone = "America/New_York") =>
@@ -132,6 +138,205 @@ describe("containment and overlap", () => {
       end: withTimeZone(zoned("2026-01-02T12:00:00.000"), "Europe/Paris"),
     });
     expect(zonedDateTimeIntervalsOverlap(zonedFirst, zonedSecond)).toBe(true);
+  });
+});
+
+describe("intersection and gap", () => {
+  it("returns the shared part and nothing for touching ranges", () => {
+    const first = instantSpan("2026-01-01T00:00:00.000Z", "2026-01-03T00:00:00.000Z");
+    const second = instantSpan("2026-01-02T00:00:00.000Z", "2026-01-05T00:00:00.000Z");
+    const shared = instantIntervalIntersection(first, second);
+    expect(toInstantString(defined(shared).start)).toBe("2026-01-02T00:00:00.000Z");
+    expect(toInstantString(defined(shared).end)).toBe("2026-01-03T00:00:00.000Z");
+
+    const contained = instantIntervalIntersection(
+      first,
+      instantSpan("2026-01-01T06:00:00.000Z", "2026-01-01T12:00:00.000Z"),
+    );
+    expect(instantIntervalDuration(defined(contained)).milliseconds).toBe(6 * 3_600_000);
+
+    const touching = instantSpan("2026-01-03T00:00:00.000Z", "2026-01-04T00:00:00.000Z");
+    expect(instantIntervalIntersection(first, touching)).toBeUndefined();
+    expect(
+      instantIntervalIntersection(
+        first,
+        instantSpan("2026-02-01T00:00:00.000Z", "2026-02-02T00:00:00.000Z"),
+      ),
+    ).toBeUndefined();
+  });
+
+  it("keeps the zone of the left range when zones differ", () => {
+    const left = createZonedDateTimeInterval({
+      start: zoned("2026-01-01T00:00:00.000"),
+      end: zoned("2026-01-03T00:00:00.000"),
+    });
+    const right = createZonedDateTimeInterval({
+      start: withTimeZone(zoned("2026-01-02T00:00:00.000"), "Europe/Paris"),
+      end: withTimeZone(zoned("2026-01-05T00:00:00.000"), "Europe/Paris"),
+    });
+    const shared = zonedDateTimeIntervalIntersection(left, right);
+    expect(defined(shared).start.timeZone).toBe("America/New_York");
+    expect(toZonedDateTimeString(defined(shared).start)).toBe(
+      "2026-01-02T00:00:00.000-05:00[America/New_York]",
+    );
+    expect(defined(zonedDateTimeIntervalIntersection(right, left)).start.timeZone).toBe(
+      "Europe/Paris",
+    );
+
+    const disjoint = createZonedDateTimeInterval({
+      start: zoned("2026-06-01T00:00:00.000"),
+      end: zoned("2026-06-02T00:00:00.000"),
+    });
+    expect(zonedDateTimeIntervalIntersection(left, disjoint)).toBeUndefined();
+  });
+
+  it("reports the space between disjoint ranges in either argument order", () => {
+    const first = instantSpan("2026-01-01T00:00:00.000Z", "2026-01-02T00:00:00.000Z");
+    const later = instantSpan("2026-01-05T00:00:00.000Z", "2026-01-06T00:00:00.000Z");
+    const gap = instantIntervalGap(first, later);
+    expect(toInstantString(defined(gap).start)).toBe("2026-01-02T00:00:00.000Z");
+    expect(toInstantString(defined(gap).end)).toBe("2026-01-05T00:00:00.000Z");
+    expect(instantIntervalDuration(defined(instantIntervalGap(later, first))).milliseconds).toBe(
+      3 * 86_400_000,
+    );
+
+    const touching = instantSpan("2026-01-02T00:00:00.000Z", "2026-01-03T00:00:00.000Z");
+    expect(instantIntervalGap(first, touching)).toBeUndefined();
+    expect(
+      instantIntervalGap(
+        first,
+        instantSpan("2026-01-01T12:00:00.000Z", "2026-01-04T00:00:00.000Z"),
+      ),
+    ).toBeUndefined();
+  });
+
+  it("returns zoned gaps in the zone of the left range", () => {
+    const left = createZonedDateTimeInterval({
+      start: zoned("2026-01-01T00:00:00.000"),
+      end: zoned("2026-01-02T00:00:00.000"),
+    });
+    const later = createZonedDateTimeInterval({
+      start: withTimeZone(zoned("2026-01-05T00:00:00.000"), "Europe/Paris"),
+      end: withTimeZone(zoned("2026-01-06T00:00:00.000"), "Europe/Paris"),
+    });
+    const gap = zonedDateTimeIntervalGap(left, later);
+    expect(defined(gap).start.timeZone).toBe("America/New_York");
+    expect(zonedDateTimeIntervalDuration(defined(gap)).milliseconds).toBe(3 * 86_400_000);
+    expect(zonedDateTimeIntervalGap(left, left)).toBeUndefined();
+  });
+});
+
+describe("merging ranges", () => {
+  it("merges overlapping and touching ranges and sorts by start", () => {
+    const merged = mergeInstantIntervals([
+      instantSpan("2026-01-05T00:00:00.000Z", "2026-01-06T00:00:00.000Z"),
+      instantSpan("2026-01-01T00:00:00.000Z", "2026-01-02T00:00:00.000Z"),
+      instantSpan("2026-01-02T00:00:00.000Z", "2026-01-03T00:00:00.000Z"),
+    ]);
+    expect(merged).toHaveLength(2);
+    expect(toInstantString(defined(merged[0]).start)).toBe("2026-01-01T00:00:00.000Z");
+    expect(toInstantString(defined(merged[0]).end)).toBe("2026-01-03T00:00:00.000Z");
+    expect(toInstantString(defined(merged[1]).start)).toBe("2026-01-05T00:00:00.000Z");
+    expect(Object.isFrozen(merged)).toBe(true);
+  });
+
+  it("absorbs a contained range and drops empty ones", () => {
+    const merged = mergeInstantIntervals([
+      instantSpan("2026-01-01T00:00:00.000Z", "2026-01-10T00:00:00.000Z"),
+      instantSpan("2026-01-02T00:00:00.000Z", "2026-01-03T00:00:00.000Z"),
+    ]);
+    expect(merged).toHaveLength(1);
+    expect(toInstantString(defined(merged[0]).end)).toBe("2026-01-10T00:00:00.000Z");
+
+    expect(
+      mergeInstantIntervals([instantSpan("2026-01-01T00:00:00.000Z", "2026-01-01T00:00:00.000Z")]),
+    ).toHaveLength(0);
+    expect(mergeInstantIntervals([])).toHaveLength(0);
+  });
+
+  it("shares the start but extends the end", () => {
+    const merged = mergeInstantIntervals([
+      instantSpan("2026-01-01T00:00:00.000Z", "2026-01-02T00:00:00.000Z"),
+      instantSpan("2026-01-01T00:00:00.000Z", "2026-01-04T00:00:00.000Z"),
+    ]);
+    expect(merged).toHaveLength(1);
+    expect(toInstantString(defined(merged[0]).end)).toBe("2026-01-04T00:00:00.000Z");
+  });
+
+  it("merges zoned ranges and requires one shared zone", () => {
+    const merged = mergeZonedDateTimeIntervals([
+      createZonedDateTimeInterval({
+        start: zoned("2026-01-01T00:00:00.000"),
+        end: zoned("2026-01-02T00:00:00.000"),
+      }),
+      createZonedDateTimeInterval({
+        start: zoned("2026-01-02T00:00:00.000"),
+        end: zoned("2026-01-03T00:00:00.000"),
+      }),
+    ]);
+    expect(merged).toHaveLength(1);
+    expect(defined(merged[0]).start.timeZone).toBe("America/New_York");
+    expect(zonedDateTimeIntervalDuration(defined(merged[0])).milliseconds).toBe(2 * 86_400_000);
+    expect(mergeZonedDateTimeIntervals([])).toHaveLength(0);
+
+    expectDateTimeError(
+      () =>
+        mergeZonedDateTimeIntervals([
+          createZonedDateTimeInterval({
+            start: zoned("2026-01-01T00:00:00.000"),
+            end: zoned("2026-01-02T00:00:00.000"),
+          }),
+          createZonedDateTimeInterval({
+            start: withTimeZone(zoned("2026-01-05T00:00:00.000"), "Europe/Paris"),
+            end: withTimeZone(zoned("2026-01-06T00:00:00.000"), "Europe/Paris"),
+          }),
+        ]),
+      "INVALID_RECORD",
+    );
+  });
+
+  it("rejects non-array input", () => {
+    expectDateTimeError(() => mergeInstantIntervals("nope" as never), "INVALID_TYPE");
+    expectDateTimeError(() => mergeZonedDateTimeIntervals("nope" as never), "INVALID_TYPE");
+  });
+
+  it("produces disjoint, non-adjacent ranges covering the same instants", () => {
+    fc.assert(
+      fc.property(
+        fc.array(
+          fc
+            .tuple(fc.integer({ min: 0, max: 400 }), fc.integer({ min: 0, max: 40 }))
+            .map(([start, length]) => ({ start, end: start + length })),
+          { minLength: 1, maxLength: 12 },
+        ),
+        (spans) => {
+          const merged = mergeInstantIntervals(
+            spans.map((span) =>
+              createInstantInterval({
+                start: { epochMilliseconds: span.start },
+                end: { epochMilliseconds: span.end },
+              }),
+            ),
+          );
+          for (let index = 1; index < merged.length; index += 1) {
+            // A strict gap must separate neighbours, otherwise they should have merged.
+            expect(defined(merged[index]).start.epochMilliseconds).toBeGreaterThan(
+              defined(merged[index - 1]).end.epochMilliseconds,
+            );
+          }
+          for (const span of merged) {
+            expect(span.end.epochMilliseconds).toBeGreaterThan(span.start.epochMilliseconds);
+          }
+          for (let point = 0; point <= 440; point += 1) {
+            const value = { epochMilliseconds: point };
+            const inSource = spans.some((span) => point >= span.start && point < span.end);
+            const inMerged = merged.some((span) => instantIntervalContains(span, value));
+            expect(inMerged).toBe(inSource);
+          }
+        },
+      ),
+      { numRuns: 200 },
+    );
   });
 });
 

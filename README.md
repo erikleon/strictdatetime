@@ -43,11 +43,38 @@ toZonedDateTimeString(tomorrow);
 ## Values
 
 The public records are `Instant`, `PlainDate`, `PlainTime`, `PlainDateTime`, `ZonedDateTime`,
-`ExactDuration`, and `CalendarDuration`. Every function validates exact enumerable keys. Runtime
-identity, prototypes, and `instanceof` are not used for values.
+`ExactDuration`, `CalendarDuration`, `InstantInterval`, and `ZonedDateTimeInterval`. Every function
+validates exact enumerable keys. Runtime identity, prototypes, and `instanceof` are not used for
+values.
 
 `ZonedDateTime` stores only an epoch millisecond and a zone identifier. Local fields and offsets are
 derived from current host time-zone data.
+
+## Intervals and boundaries
+
+`InstantInterval` and `ZonedDateTimeInterval` are half-open ranges `[start, end)`. The end is
+excluded, so `[a, b)` and `[b, c)` are adjacent rather than overlapping, and `start === end` is an
+empty range. A reversed range rejects, and both endpoints of a zoned range must resolve to the same
+normalized zone.
+
+Containment, overlap, and duration are decided on the elapsed timeline, so a zoned day that crosses
+a daylight-saving change measures 23 or 25 hours rather than 24. Values in a different zone can
+still be compared against a range.
+
+`startOfPlainDateTimeUnit`, `endOfPlainDateTimeUnit`, and their `ZonedDateTime` counterparts
+truncate to `year`, `month`, `week`, `day`, `hour`, `minute`, or `second`. The end is **exclusive**:
+the end of `2026-05-04` is `2026-05-05T00:00:00.000`, which is what makes
+`zonedDateTimeUnitInterval` cover the unit exactly. Weeks start on Monday unless `weekStart` says
+otherwise (ISO numbering, Sunday is 7).
+
+Zoned boundaries resolve the truncated wall time back through the zone. Local midnight does not
+exist on every calendar day, so a zone that skips it rejects by default and needs an explicit
+`disambiguation`.
+
+`clampInstant` and `clampZonedDateTime` take inclusive `minimum` and `maximum` bounds, not an
+interval record. `clampZonedDateTime` keeps the zone of the clamped value. `minimumInstant`,
+`maximumInstant`, and their zoned counterparts order by elapsed time and keep the first value on a
+tie.
 
 ## Parsing profiles
 

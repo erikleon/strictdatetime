@@ -10,12 +10,15 @@ design requires termination proofs, sign and add-back invariants, rounding table
 conformance vectors.
 **Depends on:** Stable 1.0 values, zone resolution, and calendar arithmetic.
 
-## Interval and boundary utilities
+## Interval intersection and union
 
-**What:** Add interval records, containment/overlap, clamp, min/max, and start/end-of-unit helpers.
-**Why:** Remove repeated application glue while reusing core comparison and arithmetic semantics.
-**Context:** Design this as one coherent convenience family rather than disconnected helpers.
-**Depends on:** Stable comparison, overflow, and arithmetic behavior.
+**What:** Add intersection, gap, and merge operations over the interval records shipped in 1.1.
+**Why:** Overlap answers whether two ranges collide; scheduling code then needs the collision
+itself, and merging a sorted list is the next repeated piece of application glue.
+**Context:** 1.1 deliberately shipped only what the original interval TODO listed. Union over a list
+needs a defined sort and a decision on whether adjacent ranges merge, which the half-open
+`[start, end)` semantics make answerable but should be settled explicitly.
+**Depends on:** Stable 1.1 interval records and overlap semantics.
 
 ## Relative-time labels
 

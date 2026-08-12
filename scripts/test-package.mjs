@@ -12,7 +12,9 @@ const temporary = mkdtempSync(join(tmpdir(), "strictdatetime-package-"));
 // platform instead. npm sets npm_execpath to its own CLI when it runs a package script.
 const npmCli = process.env.npm_execpath;
 if (!npmCli) {
-  throw new Error("npm_execpath is unset. Run this through npm, for example `npm run test:package`.");
+  throw new Error(
+    "npm_execpath is unset. Run this through npm, for example `npm run test:package`.",
+  );
 }
 const tscCli = join(root, "node_modules/typescript/bin/tsc");
 
@@ -27,7 +29,14 @@ function run(command, args, cwd = root) {
 
 try {
   const packed = JSON.parse(
-    run(process.execPath, [npmCli, "pack", "--ignore-scripts", "--json", "--pack-destination", temporary]),
+    run(process.execPath, [
+      npmCli,
+      "pack",
+      "--ignore-scripts",
+      "--json",
+      "--pack-destination",
+      temporary,
+    ]),
   );
   const tarball = join(temporary, packed[0].filename);
   const stat = packed[0];

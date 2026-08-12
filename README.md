@@ -71,6 +71,21 @@ Zoned boundaries resolve the truncated wall time back through the zone. Local mi
 exist on every calendar day, so a zone that skips it rejects by default and needs an explicit
 `disambiguation`.
 
+`instantIntervalIntersection` and `zonedDateTimeIntervalIntersection` return the shared part of two
+ranges, or `undefined` when they share no instant. `instantIntervalGap` and
+`zonedDateTimeIntervalGap` return the range strictly between two disjoint ranges, or `undefined`
+when they overlap or merely touch; argument order does not matter. Because `[a, b)` and `[b, c)`
+meet at a point both exclude, touching ranges intersect in nothing and have no gap rather than
+producing an empty range at `b`. The zoned results carry the zone of the left argument.
+
+`mergeInstantIntervals` and `mergeZonedDateTimeIntervals` reduce a list to the fewest ranges
+covering the same instants, ordered by start. Touching ranges merge, since `[a, b)` and `[b, c)`
+cover exactly `[a, c)` and keeping them apart would describe one span with two records. Empty
+ranges cover no instant and drop out, so merging only empty ranges returns an empty list. Every
+zoned range passed to `mergeZonedDateTimeIntervals` must already share one zone; merging across
+zones would leave the zone of the result depending on sort order, so it rejects instead. Convert
+with `withTimeZone` first.
+
 `clampInstant` and `clampZonedDateTime` take inclusive `minimum` and `maximum` bounds, not an
 interval record. `clampZonedDateTime` keeps the zone of the clamped value. `minimumInstant`,
 `maximumInstant`, and their zoned counterparts order by elapsed time and keep the first value on a

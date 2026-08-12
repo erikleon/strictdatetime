@@ -10,15 +10,17 @@ design requires termination proofs, sign and add-back invariants, rounding table
 conformance vectors.
 **Depends on:** Stable 1.0 values, zone resolution, and calendar arithmetic.
 
-## Interval intersection and union
+## Interval difference
 
-**What:** Add intersection, gap, and merge operations over the interval records shipped in 1.1.
-**Why:** Overlap answers whether two ranges collide; scheduling code then needs the collision
-itself, and merging a sorted list is the next repeated piece of application glue.
-**Context:** 1.1 deliberately shipped only what the original interval TODO listed. Union over a list
-needs a defined sort and a decision on whether adjacent ranges merge, which the half-open
-`[start, end)` semantics make answerable but should be settled explicitly.
-**Depends on:** Stable 1.1 interval records and overlap semantics.
+**What:** Add subtraction of one range from another, returning the zero, one, or two ranges that
+remain.
+**Why:** 1.2 ships intersection, gap, and merge, so the remaining set operation is the one that can
+split a single range in two. Availability code wants free time as "the working day minus the
+meetings", which is difference over a merged list.
+**Context:** The return shape is the open question. Difference over a list is closed under the same
+minimal disjoint form `mergeInstantIntervals` already produces, so it likely returns an array and
+reuses that normalization rather than an ad-hoc tuple.
+**Depends on:** Stable 1.2 intersection and merge semantics.
 
 ## Relative-time labels
 

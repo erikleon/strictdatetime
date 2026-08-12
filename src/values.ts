@@ -15,7 +15,7 @@ export const MIN_IANA_YEAR = 1970;
 
 type DataRecord = Record<string, unknown>;
 
-function ownRecord(value: unknown, keys: readonly string[], name: string): DataRecord {
+export function ownRecord(value: unknown, keys: readonly string[], name: string): DataRecord {
   if (typeof value !== "object" || value === null || Array.isArray(value)) {
     fail("INVALID_TYPE", `${name} must be a record`);
   }

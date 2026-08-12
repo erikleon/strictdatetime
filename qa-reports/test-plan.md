@@ -14,6 +14,7 @@ Branch: main
 - Typed parsing and canonical serialization for every public value.
 - Unique, missing, and duplicated IANA wall-time resolution.
 - Exact versus calendar arithmetic across DST and month boundaries.
+- Half-open interval containment, overlap, clamping, and unit boundaries across zones.
 - Localized formatting with explicit zone ownership.
 - Packed ESM, CommonJS, and TypeScript consumers.
 
@@ -23,6 +24,7 @@ Branch: main
 - Leap years, year 0000, year 9999, invalid month/day/time, and unsafe integers.
 - Millisecond precision and non-zero finer fractions.
 - New York hour gaps/overlaps, Lord Howe half-hour changes, and Apia date-line changes.
+- Santiago days with no local midnight, adjacent unit intervals, and year 0000/9999 unit boundaries.
 - Offset/zone mismatch policies and unknown zones.
 - Host tzdb variation across Node, Chromium, Firefox, and WebKit.
 - Cache eviction, package size, and bounded resolution work.

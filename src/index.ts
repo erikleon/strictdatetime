@@ -24,6 +24,27 @@ export {
 } from "./errors.js";
 export { formatInstant, formatZonedDateTime } from "./format.js";
 export {
+  clampInstant,
+  clampZonedDateTime,
+  createInstantInterval,
+  createZonedDateTimeInterval,
+  endOfPlainDateTimeUnit,
+  endOfZonedDateTimeUnit,
+  instantIntervalContains,
+  instantIntervalDuration,
+  instantIntervalsOverlap,
+  maximumInstant,
+  maximumZonedDateTime,
+  minimumInstant,
+  minimumZonedDateTime,
+  startOfPlainDateTimeUnit,
+  startOfZonedDateTimeUnit,
+  zonedDateTimeIntervalContains,
+  zonedDateTimeIntervalDuration,
+  zonedDateTimeIntervalsOverlap,
+  zonedDateTimeUnitInterval,
+} from "./intervals.js";
+export {
   parseInstant,
   parsePlainDate,
   parsePlainDateTime,
@@ -42,14 +63,20 @@ export type {
   ExactDuration,
   FormatOptions,
   Instant,
+  InstantInterval,
+  IntervalUnit,
   OffsetPolicy,
   Overflow,
   PlainDate,
   PlainDateTime,
   PlainTime,
   ResolutionOptions,
+  UnitBoundaryOptions,
+  WeekStart,
   ZonedDateTime,
+  ZonedDateTimeInterval,
   ZonedParseOptions,
+  ZonedUnitBoundaryOptions,
 } from "./types.js";
 export {
   createCalendarDuration,

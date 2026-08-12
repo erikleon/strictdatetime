@@ -5,6 +5,8 @@ import {
   resolveZonedDateTime,
   toInstantString,
   toZonedDateTimeString,
+  zonedDateTimeIntervalDuration,
+  zonedDateTimeUnitInterval,
 } from "../../src/index.js";
 
 test("runs the core package semantics in a browser", () => {
@@ -16,4 +18,14 @@ test("runs the core package semantics in a browser", () => {
     "America/New_York",
   );
   expect(toZonedDateTimeString(value)).toBe("2026-08-10T08:00:00.000-04:00[America/New_York]");
+});
+
+test("derives unit intervals from browser zone data", () => {
+  const value = resolveZonedDateTime(
+    parsePlainDateTime("2026-03-08T15:00:00.000"),
+    "America/New_York",
+  );
+  const day = zonedDateTimeUnitInterval(value, "day");
+  expect(toZonedDateTimeString(day.start)).toBe("2026-03-08T00:00:00.000-05:00[America/New_York]");
+  expect(zonedDateTimeIntervalDuration(day).milliseconds).toBe(23 * 3_600_000);
 });

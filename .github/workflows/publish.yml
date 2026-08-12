@@ -3,6 +3,12 @@ name: Publish
 on:
   release:
     types: [published]
+  workflow_call:
+    inputs:
+      tag:
+        description: Tag to build and publish, for example v1.2.3.
+        required: true
+        type: string
 
 permissions:
   contents: read
@@ -14,6 +20,8 @@ jobs:
     environment: npm
     steps:
       - uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.tag || github.ref_name }}
       - uses: actions/setup-node@v6
         with:
           node-version: 24
@@ -21,7 +29,9 @@ jobs:
           cache: npm
       - run: npm ci
       - name: Verify tag and package version
-        run: test "${GITHUB_REF_NAME}" = "v$(node -p 'require("./package.json").version')"
+        env:
+          TAG: ${{ inputs.tag || github.ref_name }}
+        run: test "$TAG" = "v$(node -p 'require("./package.json").version')"
       - run: npm run check
       - run: npx playwright install --with-deps chromium firefox webkit
       - run: npm run test:browser
@@ -32,5 +42,13 @@ jobs:
           version=$(node -p 'require("./package.json").version')
           npm view "$name@$version" version >/dev/null 2>&1 && published=true || published=false
           echo "published=$published" >> "$GITHUB_OUTPUT"
+      - name: Choose the npm dist-tag
+        id: disttag
+        run: |
+          version=$(node -p 'require("./package.json").version')
+          case "$version" in
+            *-*) echo "name=next" >> "$GITHUB_OUTPUT" ;;
+            *) echo "name=latest" >> "$GITHUB_OUTPUT" ;;
+          esac
       - if: steps.registry.outputs.published == 'false'
-        run: npm publish --access public
+        run: npm publish --access public --tag "${{ steps.disttag.outputs.name }}"

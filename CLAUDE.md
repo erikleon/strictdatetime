@@ -29,6 +29,22 @@
 - ESM and CJS create separate class/cache instances. Stable error codes and `isDateTimeError` are the
   cross-build contract.
 
+## Releasing
+
+The version in `package.json` drives the whole release. Bump it, merge to `main`, and
+`.github/workflows/release.yml` tags `vX.Y.Z`, opens a GitHub release with generated notes, and
+calls `publish.yml` to publish to npm. Do not create tags or releases by hand.
+
+- The tag job is idempotent. If `vX.Y.Z` already exists it skips, so unrelated `package.json` edits
+  do not re-release.
+- Publishing runs from `release.yml` rather than the `release: published` event, because a release
+  created with `GITHUB_TOKEN` does not start another workflow. The `release: published` trigger
+  stays on `publish.yml` for a release made by hand.
+- A prerelease version (`1.2.0-rc.1`) is marked prerelease on GitHub and publishes under the npm
+  `next` dist-tag, so `latest` stays on the last stable version.
+- Run the workflow manually with `gh workflow run release.yml` to release the version already on
+  `main`.
+
 ## Design System
 
 Always read `DESIGN.md` before making visual or UI decisions. Font choices, colors, spacing, and the

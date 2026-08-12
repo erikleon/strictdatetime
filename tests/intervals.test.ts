@@ -9,6 +9,7 @@ import {
   endOfZonedDateTimeUnit,
   type IntervalUnit,
   instantIntervalContains,
+  instantIntervalDifference,
   instantIntervalDuration,
   instantIntervalGap,
   instantIntervalIntersection,
@@ -30,6 +31,7 @@ import {
   toZonedDateTimeString,
   withTimeZone,
   zonedDateTimeIntervalContains,
+  zonedDateTimeIntervalDifference,
   zonedDateTimeIntervalDuration,
   zonedDateTimeIntervalGap,
   zonedDateTimeIntervalIntersection,
@@ -223,6 +225,134 @@ describe("intersection and gap", () => {
     expect(defined(gap).start.timeZone).toBe("America/New_York");
     expect(zonedDateTimeIntervalDuration(defined(gap)).milliseconds).toBe(3 * 86_400_000);
     expect(zonedDateTimeIntervalGap(left, left)).toBeUndefined();
+  });
+});
+
+describe("difference", () => {
+  const day = () => instantSpan("2026-01-01T00:00:00.000Z", "2026-01-02T00:00:00.000Z");
+  const at = (span: { start: { epochMilliseconds: number } }) => toInstantString(span.start);
+
+  it("splits a range when the removal falls inside it", () => {
+    const rest = instantIntervalDifference(
+      day(),
+      instantSpan("2026-01-01T09:00:00.000Z", "2026-01-01T10:00:00.000Z"),
+    );
+    expect(rest).toHaveLength(2);
+    expect(at(defined(rest[0]))).toBe("2026-01-01T00:00:00.000Z");
+    expect(toInstantString(defined(rest[0]).end)).toBe("2026-01-01T09:00:00.000Z");
+    expect(at(defined(rest[1]))).toBe("2026-01-01T10:00:00.000Z");
+    expect(toInstantString(defined(rest[1]).end)).toBe("2026-01-02T00:00:00.000Z");
+    expect(Object.isFrozen(rest)).toBe(true);
+  });
+
+  it("trims one side when the removal covers an end", () => {
+    const trailing = instantIntervalDifference(
+      day(),
+      instantSpan("2025-12-31T00:00:00.000Z", "2026-01-01T06:00:00.000Z"),
+    );
+    expect(trailing).toHaveLength(1);
+    expect(at(defined(trailing[0]))).toBe("2026-01-01T06:00:00.000Z");
+
+    const leading = instantIntervalDifference(
+      day(),
+      instantSpan("2026-01-01T18:00:00.000Z", "2026-01-03T00:00:00.000Z"),
+    );
+    expect(leading).toHaveLength(1);
+    expect(toInstantString(defined(leading[0]).end)).toBe("2026-01-01T18:00:00.000Z");
+  });
+
+  it("removes everything or nothing at the extremes", () => {
+    expect(
+      instantIntervalDifference(
+        day(),
+        instantSpan("2025-12-31T00:00:00.000Z", "2026-01-03T00:00:00.000Z"),
+      ),
+    ).toHaveLength(0);
+
+    const disjoint = instantIntervalDifference(
+      day(),
+      instantSpan("2026-02-01T00:00:00.000Z", "2026-02-02T00:00:00.000Z"),
+    );
+    expect(disjoint).toHaveLength(1);
+    expect(at(defined(disjoint[0]))).toBe("2026-01-01T00:00:00.000Z");
+
+    // Touching ranges share no instant, so subtracting one removes nothing.
+    const touching = instantIntervalDifference(
+      day(),
+      instantSpan("2026-01-02T00:00:00.000Z", "2026-01-03T00:00:00.000Z"),
+    );
+    expect(touching).toHaveLength(1);
+    expect(toInstantString(defined(touching[0]).end)).toBe("2026-01-02T00:00:00.000Z");
+
+    const empty = instantSpan("2026-01-01T00:00:00.000Z", "2026-01-01T00:00:00.000Z");
+    expect(instantIntervalDifference(empty, day())).toHaveLength(0);
+    expect(
+      instantIntervalDifference(
+        empty,
+        instantSpan("2026-03-01T00:00:00.000Z", "2026-03-02T00:00:00.000Z"),
+      ),
+    ).toHaveLength(0);
+  });
+
+  it("keeps the zone of the left range across a DST change", () => {
+    const dstDay = createZonedDateTimeInterval({
+      start: zoned("2026-03-08T00:00:00.000"),
+      end: zoned("2026-03-09T00:00:00.000"),
+    });
+    const removal = createZonedDateTimeInterval({
+      start: withTimeZone(zoned("2026-03-08T06:00:00.000"), "Europe/Paris"),
+      end: withTimeZone(zoned("2026-03-08T07:00:00.000"), "Europe/Paris"),
+    });
+    const rest = zonedDateTimeIntervalDifference(dstDay, removal);
+    expect(rest).toHaveLength(2);
+    expect(defined(rest[0]).start.timeZone).toBe("America/New_York");
+    const total =
+      zonedDateTimeIntervalDuration(defined(rest[0])).milliseconds +
+      zonedDateTimeIntervalDuration(defined(rest[1])).milliseconds;
+    expect(total).toBe(22 * 3_600_000);
+
+    const untouched = zonedDateTimeIntervalDifference(
+      dstDay,
+      createZonedDateTimeInterval({
+        start: zoned("2026-06-01T00:00:00.000"),
+        end: zoned("2026-06-02T00:00:00.000"),
+      }),
+    );
+    expect(untouched).toHaveLength(1);
+    expect(zonedDateTimeIntervalDuration(defined(untouched[0])).milliseconds).toBe(23 * 3_600_000);
+  });
+
+  it("partitions the left range with its intersection", () => {
+    fc.assert(
+      fc.property(
+        fc.integer({ min: 0, max: 60 }),
+        fc.integer({ min: 0, max: 30 }),
+        fc.integer({ min: 0, max: 60 }),
+        fc.integer({ min: 0, max: 30 }),
+        (leftStart, leftLength, rightStart, rightLength) => {
+          const left = createInstantInterval({
+            start: { epochMilliseconds: leftStart },
+            end: { epochMilliseconds: leftStart + leftLength },
+          });
+          const right = createInstantInterval({
+            start: { epochMilliseconds: rightStart },
+            end: { epochMilliseconds: rightStart + rightLength },
+          });
+          const rest = instantIntervalDifference(left, right);
+          const shared = instantIntervalIntersection(left, right);
+          for (let point = 0; point <= 95; point += 1) {
+            const value = { epochMilliseconds: point };
+            const inLeft = instantIntervalContains(left, value);
+            const inRest = rest.some((span) => instantIntervalContains(span, value));
+            const inShared = shared !== undefined && instantIntervalContains(shared, value);
+            // Every instant of left sits in exactly one of the two pieces, and nothing else does.
+            expect(inRest || inShared).toBe(inLeft);
+            expect(inRest && inShared).toBe(false);
+          }
+        },
+      ),
+      { numRuns: 300 },
+    );
   });
 });
 

@@ -244,6 +244,56 @@ export function zonedDateTimeIntervalGap(
   });
 }
 
+function differenceBounds(left: EpochBounds, right: EpochBounds): EpochBounds[] {
+  if (!overlaps(left, right)) return left.end > left.start ? [left] : [];
+  const parts: EpochBounds[] = [];
+  if (right.start > left.start) parts.push({ start: left.start, end: right.start });
+  if (right.end < left.end) parts.push({ start: right.end, end: left.end });
+  return parts;
+}
+
+/**
+ * Part of `left` that `right` does not cover, ordered by start. Removing the middle of a range
+ * splits it, so the result holds two ranges; removing an end or nothing gives one, and removing
+ * everything gives none. Touching ranges cover no shared instant and so remove nothing. Empty
+ * ranges never appear in the result, matching {@link mergeInstantIntervals}.
+ */
+export function instantIntervalDifference(
+  left: InstantInterval,
+  right: InstantInterval,
+): readonly InstantInterval[] {
+  const parts = differenceBounds(
+    epochBounds(createInstantInterval(left)),
+    epochBounds(createInstantInterval(right)),
+  );
+  return Object.freeze(
+    parts.map((span) =>
+      createInstantInterval({ start: createInstant(span.start), end: createInstant(span.end) }),
+    ),
+  );
+}
+
+/** The results carry the zone of `left`, matching {@link zonedDateTimeIntervalIntersection}. */
+export function zonedDateTimeIntervalDifference(
+  left: ZonedDateTimeInterval,
+  right: ZonedDateTimeInterval,
+): readonly ZonedDateTimeInterval[] {
+  const first = createZonedDateTimeInterval(left);
+  const zone = first.start.timeZone;
+  const parts = differenceBounds(
+    epochBounds(first),
+    epochBounds(createZonedDateTimeInterval(right)),
+  );
+  return Object.freeze(
+    parts.map((span) =>
+      createZonedDateTimeInterval({
+        start: zonedDateTimeFromInstant({ epochMilliseconds: span.start }, zone),
+        end: zonedDateTimeFromInstant({ epochMilliseconds: span.end }, zone),
+      }),
+    ),
+  );
+}
+
 /**
  * Reduces spans to the fewest ranges covering the same instants, ordered by start.
  *

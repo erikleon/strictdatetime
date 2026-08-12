@@ -1,27 +1,93 @@
 name: Publish
 
+# package.json holds the release version. A bump landing on main tags vX.Y.Z, opens a
+# GitHub release, and publishes to npm.
+#
+# Tagging and publishing live in this one file on purpose. npm trusted publishing checks
+# the top-level workflow filename against the publisher configured on the registry, so
+# calling a reusable publish workflow from a different file fails the OIDC exchange.
+
 on:
-  release:
-    types: [published]
-  workflow_call:
-    inputs:
-      tag:
-        description: Tag to build and publish, for example v1.2.3.
-        required: true
-        type: string
+  push:
+    branches: [main]
+    paths:
+      - package.json
+  workflow_dispatch:
 
 permissions:
   contents: read
-  id-token: write
 
 jobs:
-  publish:
+  tag:
     runs-on: ubuntu-latest
-    environment: npm
+    permissions:
+      contents: write
+    outputs:
+      tag: ${{ steps.version.outputs.tag }}
+      publish: ${{ steps.registry.outputs.publish }}
     steps:
       - uses: actions/checkout@v6
         with:
-          ref: ${{ inputs.tag || github.ref_name }}
+          fetch-depth: 0
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+      - name: Read the package version
+        id: version
+        run: |
+          name=$(node -p 'require("./package.json").name')
+          version=$(node -p 'require("./package.json").version')
+          echo "name=$name" >> "$GITHUB_OUTPUT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "tag=v$version" >> "$GITHUB_OUTPUT"
+          case "$version" in
+            *-*) echo "prerelease=true" >> "$GITHUB_OUTPUT" ;;
+            *) echo "prerelease=false" >> "$GITHUB_OUTPUT" ;;
+          esac
+      - name: Create the tag and the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.version.outputs.tag }}
+          PRERELEASE: ${{ steps.version.outputs.prerelease }}
+        run: |
+          if git rev-parse -q --verify "refs/tags/$TAG" >/dev/null; then
+            echo "$TAG already exists, so it is left alone."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "$TAG" -m "$TAG"
+          git push origin "$TAG"
+          flags=""
+          if [ "$PRERELEASE" = "true" ]; then
+            flags="--prerelease"
+          fi
+          gh release create "$TAG" --title "$TAG" --generate-notes $flags
+      - name: Check whether this version is already on the registry
+        id: registry
+        env:
+          NAME: ${{ steps.version.outputs.name }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          if npm view "$NAME@$VERSION" version >/dev/null 2>&1; then
+            echo "$NAME@$VERSION is already published."
+            echo "publish=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "publish=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  publish:
+    needs: tag
+    if: needs.tag.outputs.publish == 'true'
+    runs-on: ubuntu-latest
+    environment: npm
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ needs.tag.outputs.tag }}
       - uses: actions/setup-node@v6
         with:
           node-version: 24
@@ -30,18 +96,11 @@ jobs:
       - run: npm ci
       - name: Verify tag and package version
         env:
-          TAG: ${{ inputs.tag || github.ref_name }}
+          TAG: ${{ needs.tag.outputs.tag }}
         run: test "$TAG" = "v$(node -p 'require("./package.json").version')"
       - run: npm run check
       - run: npx playwright install --with-deps chromium firefox webkit
       - run: npm run test:browser
-      - name: Check whether this version is already on the registry
-        id: registry
-        run: |
-          name=$(node -p 'require("./package.json").name')
-          version=$(node -p 'require("./package.json").version')
-          npm view "$name@$version" version >/dev/null 2>&1 && published=true || published=false
-          echo "published=$published" >> "$GITHUB_OUTPUT"
       - name: Choose the npm dist-tag
         id: disttag
         run: |
@@ -50,5 +109,4 @@ jobs:
             *-*) echo "name=next" >> "$GITHUB_OUTPUT" ;;
             *) echo "name=latest" >> "$GITHUB_OUTPUT" ;;
           esac
-      - if: steps.registry.outputs.published == 'false'
-        run: npm publish --access public --tag "${{ steps.disttag.outputs.name }}"
+      - run: npm publish --access public --tag "${{ steps.disttag.outputs.name }}"

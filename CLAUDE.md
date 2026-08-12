@@ -32,18 +32,20 @@
 ## Releasing
 
 The version in `package.json` drives the whole release. Bump it, merge to `main`, and
-`.github/workflows/release.yml` tags `vX.Y.Z`, opens a GitHub release with generated notes, and
-calls `publish.yml` to publish to npm. Do not create tags or releases by hand.
+`.github/workflows/publish.yml` tags `vX.Y.Z`, opens a GitHub release with generated notes, and
+publishes to npm. Do not create tags or releases by hand.
 
-- The tag job is idempotent. If `vX.Y.Z` already exists it skips, so unrelated `package.json` edits
-  do not re-release.
-- Publishing runs from `release.yml` rather than the `release: published` event, because a release
-  created with `GITHUB_TOKEN` does not start another workflow. The `release: published` trigger
-  stays on `publish.yml` for a release made by hand.
+- Tagging and publishing share one workflow file deliberately. npm trusted publishing checks the
+  top-level workflow filename against the publisher registered on npmjs.com, so splitting the
+  publish step into a reusable workflow called from another file fails the OIDC exchange with a
+  misleading `404`. The registered publisher must name `publish.yml`.
+- Publishing is authenticated only by OIDC. There is no `NPM_TOKEN` fallback secret.
+- The tag step is idempotent, and the publish job is gated on the version being absent from the
+  registry rather than on the tag being new. A tagged but unpublished version therefore still
+  publishes on a re-run, and unrelated `package.json` edits do nothing.
 - A prerelease version (`1.2.0-rc.1`) is marked prerelease on GitHub and publishes under the npm
   `next` dist-tag, so `latest` stays on the last stable version.
-- Run the workflow manually with `gh workflow run release.yml` to release the version already on
-  `main`.
+- Run `gh workflow run publish.yml` to release the version already on `main`.
 
 ## Design System
 

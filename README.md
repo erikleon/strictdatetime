@@ -78,6 +78,11 @@ when they overlap or merely touch; argument order does not matter. Because `[a, 
 meet at a point both exclude, touching ranges intersect in nothing and have no gap rather than
 producing an empty range at `b`. The zoned results carry the zone of the left argument.
 
+`instantIntervalDifference` and `zonedDateTimeIntervalDifference` return the part of the left range
+the right one does not cover, ordered by start. Removing the middle of a range splits it, so the
+result holds two ranges; removing an end or nothing gives one, and removing everything gives none.
+Subtracting a touching range removes nothing, since the two share no instant.
+
 `mergeInstantIntervals` and `mergeZonedDateTimeIntervals` reduce a list to the fewest ranges
 covering the same instants, ordered by start. Touching ranges merge, since `[a, b)` and `[b, c)`
 cover exactly `[a, c)` and keeping them apart would describe one span with two records. Empty

@@ -15,7 +15,8 @@ Branch: main
 - Unique, missing, and duplicated IANA wall-time resolution.
 - Exact versus calendar arithmetic across DST and month boundaries.
 - Half-open interval containment, overlap, clamping, and unit boundaries across zones.
-- Interval intersection, gap, and merge, including touching ranges and mixed-zone rejection.
+- Interval intersection, gap, difference, and merge, including touching ranges, range splitting,
+  and mixed-zone rejection.
 - Localized formatting with explicit zone ownership.
 - Packed ESM, CommonJS, and TypeScript consumers.
 

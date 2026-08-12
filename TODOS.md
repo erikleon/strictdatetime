@@ -10,17 +10,17 @@ design requires termination proofs, sign and add-back invariants, rounding table
 conformance vectors.
 **Depends on:** Stable 1.0 values, zone resolution, and calendar arithmetic.
 
-## Interval difference
+## Subtracting a list of ranges
 
-**What:** Add subtraction of one range from another, returning the zero, one, or two ranges that
-remain.
-**Why:** 1.2 ships intersection, gap, and merge, so the remaining set operation is the one that can
-split a single range in two. Availability code wants free time as "the working day minus the
-meetings", which is difference over a merged list.
-**Context:** The return shape is the open question. Difference over a list is closed under the same
-minimal disjoint form `mergeInstantIntervals` already produces, so it likely returns an array and
-reuses that normalization rather than an ad-hoc tuple.
-**Depends on:** Stable 1.2 intersection and merge semantics.
+**What:** Add removal of many ranges from one range, returning what remains.
+**Why:** Availability code wants free time as "the working day minus the meetings". 1.3 ships the
+one-range primitive, but folding it over a list by hand is easy to get wrong: each step can split a
+range, so the accumulator has to be re-normalized rather than carried as a single range.
+**Context:** The result is the minimal disjoint form `mergeInstantIntervals` already produces, so
+the implementation is merge over the removals followed by a fold of `instantIntervalDifference`.
+The open question is naming, since the existing two-argument set operations read
+`instantIntervalX(left, right)` and this one takes a range and a list.
+**Depends on:** Stable 1.3 difference and merge semantics.
 
 ## Relative-time labels
 

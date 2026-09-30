@@ -101,6 +101,8 @@ export {
   MAX_YEAR,
   MIN_IANA_YEAR,
   MIN_YEAR,
+  plainDateOf,
+  plainTimeOf,
 } from "./values.js";
 export {
   normalizeTimeZone,

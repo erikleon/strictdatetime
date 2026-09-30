@@ -134,6 +134,18 @@ export function assertPlainDateTime(value: unknown): PlainDateTime {
   return createPlainDateTime(value as PlainDateTime);
 }
 
+/** The calendar date of a `PlainDateTime`, dropping the time. */
+export function plainDateOf(value: PlainDateTime): PlainDate {
+  const { year, month, day } = assertPlainDateTime(value);
+  return Object.freeze({ year, month, day });
+}
+
+/** The wall-clock time of a `PlainDateTime`, dropping the date. */
+export function plainTimeOf(value: PlainDateTime): PlainTime {
+  const { hour, minute, second, millisecond } = assertPlainDateTime(value);
+  return Object.freeze({ hour, minute, second, millisecond });
+}
+
 export function createZonedDateTime(fields: ZonedDateTime): ZonedDateTime {
   const record = ownRecord(fields, ["epochMilliseconds", "timeZone"], "ZonedDateTime");
   const instant = createInstant(integer(record.epochMilliseconds, "epochMilliseconds"));

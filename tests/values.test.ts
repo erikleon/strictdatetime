@@ -11,6 +11,10 @@ import {
   instantFromDate,
   instantToDate,
   isLeapYear,
+  plainDateOf,
+  plainTimeOf,
+  projectInstant,
+  toPlainDateString,
 } from "../src/index.js";
 import { expectDateTimeError } from "./helpers.js";
 
@@ -135,5 +139,42 @@ describe("value factories", () => {
         }),
       "INVALID_ZONE",
     );
+  });
+});
+
+describe("plain date-time parts", () => {
+  const value = createPlainDateTime({
+    year: 2026,
+    month: 9,
+    day: 24,
+    hour: 23,
+    minute: 5,
+    second: 6,
+    millisecond: 7,
+  });
+
+  it("takes the date or time part as a frozen, exact record", () => {
+    const date = plainDateOf(value);
+    expect(date).toEqual({ year: 2026, month: 9, day: 24 });
+    expect(Object.isFrozen(date)).toBe(true);
+    const time = plainTimeOf(value);
+    expect(time).toEqual({ hour: 23, minute: 5, second: 6, millisecond: 7 });
+    expect(Object.isFrozen(time)).toBe(true);
+    expect(createPlainDate(date)).toEqual(date);
+    expect(createPlainTime(time)).toEqual(time);
+  });
+
+  it("gives the local calendar date of an instant", () => {
+    // 03:30 UTC is still the evening before in New York.
+    const local = projectInstant(Date.UTC(2026, 8, 25, 3, 30), "America/New_York");
+    expect(toPlainDateString(plainDateOf(local))).toBe("2026-09-24");
+  });
+
+  it("rejects anything that is not a PlainDateTime", () => {
+    expectDateTimeError(
+      () => plainDateOf({ year: 2026, month: 9, day: 24 } as never),
+      "INVALID_RECORD",
+    );
+    expectDateTimeError(() => plainTimeOf({ ...value, month: 13 }), "OUT_OF_RANGE");
   });
 });

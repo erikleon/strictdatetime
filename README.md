@@ -45,7 +45,9 @@ toZonedDateTimeString(tomorrow);
 The public records are `Instant`, `PlainDate`, `PlainTime`, `PlainDateTime`, `ZonedDateTime`,
 `ExactDuration`, `CalendarDuration`, `InstantInterval`, and `ZonedDateTimeInterval`. Every function
 validates exact enumerable keys. Runtime identity, prototypes, and `instanceof` are not used for
-values.
+values. So a `PlainDateTime` is not a `PlainDate`; `plainDateOf` and `plainTimeOf` take its date or
+time part, for example `plainDateOf(projectInstant(ms, zone))` for the local calendar date of an
+instant.
 
 `ZonedDateTime` stores only an epoch millisecond and a zone identifier. Local fields and offsets are
 derived from current host time-zone data.

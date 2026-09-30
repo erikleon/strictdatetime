@@ -66,6 +66,15 @@ export interface ZonedParseOptions extends ResolutionOptions {
   readonly offset?: OffsetPolicy;
 }
 
+export interface Rfc5322ParseOptions {
+  /**
+   * Accept the obsolete zone names `UT`, `GMT`, `EST`, `EDT`, `CST`, `CDT`, `MST`, `MDT`, `PST`, and
+   * `PDT` (RFC 5322 section 4.3) in place of a numeric offset. Off by default. Military one-letter
+   * zones are always rejected, because RFC 5322 says their meaning is unreliable.
+   */
+  readonly allowObsoleteZones?: boolean;
+}
+
 export interface UnitBoundaryOptions {
   readonly weekStart?: WeekStart;
 }

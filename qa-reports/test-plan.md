@@ -25,6 +25,7 @@ Branch: main
 - Site layout at 390px and 1440px, keyboard focus visibility, reduced motion, and unavailable clipboard access.
 - Leap years, year 0000, year 9999, invalid month/day/time, and unsafe integers.
 - Millisecond precision and non-zero finer fractions.
+- RFC 5322 dates: folded lines, trailing and nested comments, comments before the zone, `-0000`, obsolete zone names with and without `allowObsoleteZones`, military zones, two-digit years, a day of the week that does not match the date, and leap seconds.
 - `HH:MM` accepted by the plain time parsers only; partial forms (`HH:MM:`, `HH:MM.fff`, one-digit fields) rejected.
 - New York hour gaps/overlaps, Lord Howe half-hour changes, and Apia date-line changes.
 - The start of a calendar date in a zone: ordinary days, skipped and repeated midnights, and the whole day Apia skipped on 2011-12-30.

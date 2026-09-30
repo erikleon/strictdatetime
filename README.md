@@ -114,6 +114,13 @@ tie.
   seconds.
 - `parseZonedDateTime`: ISO date-time, required numeric offset, and exactly one `[IANA/Zone]` or
   fixed-offset annotation.
+- `parseRfc5322DateTime`: the date in an email `Date` header, such as
+  `Mon, 16 Feb 2026 10:00:00 -0500`, returned as an `Instant`. It follows the current RFC 5322
+  grammar: a numeric zone, a four-digit year from 1900, optional seconds, and an optional day of the
+  week that must match the date. Folded lines are unfolded, and comments after the zone, such as
+  `(UTC)`, are ignored. The obsolete forms of RFC 5322 section 4.3 fail with `INVALID_RFC5322`. The
+  one exception is the obsolete zone names (`GMT`, `EST`, and others): `{ allowObsoleteZones: true }`
+  accepts them, which also reads the HTTP date format `Sun, 06 Nov 1994 08:49:37 GMT`.
 
 The zoned grammar is an intentional RFC 9557 subset. Calendar, critical, unknown, and duplicate
 annotations are rejected. Leap seconds and `24:00` are not supported.

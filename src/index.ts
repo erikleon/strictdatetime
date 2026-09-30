@@ -64,6 +64,7 @@ export {
   toPlainTimeString,
   toZonedDateTimeString,
 } from "./iso.js";
+export { parseRfc5322DateTime } from "./rfc5322.js";
 export type {
   CalendarArithmeticOptions,
   CalendarDuration,
@@ -79,6 +80,7 @@ export type {
   PlainDateTime,
   PlainTime,
   ResolutionOptions,
+  Rfc5322ParseOptions,
   UnitBoundaryOptions,
   WeekStart,
   ZonedDateTime,

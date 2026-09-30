@@ -103,6 +103,9 @@ tie.
 
 - `parseInstant`: uppercase RFC 3339-style ISO timestamp with `Z` or a numeric offset.
 - `parsePlainDate`, `parsePlainTime`, `parsePlainDateTime`: ISO calendar fields without a zone.
+  Seconds may be left out (`14:30`, `2026-03-08T02:30`), which is what an HTML `datetime-local` or
+  `time` input produces; a fraction then is not allowed. The instant and zoned profiles require
+  seconds.
 - `parseZonedDateTime`: ISO date-time, required numeric offset, and exactly one `[IANA/Zone]` or
   fixed-offset annotation.
 

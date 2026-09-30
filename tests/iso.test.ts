@@ -27,6 +27,23 @@ describe("strict ISO profiles", () => {
     expect(toInstantString(parseInstant("2026-08-10T12:34:56Z"))).toBe("2026-08-10T12:34:56.000Z");
   });
 
+  it("accepts HH:MM without seconds in plain times only", () => {
+    expect(toPlainTimeString(parsePlainTime("02:30"))).toBe("02:30:00.000");
+    expect(toPlainDateTimeString(parsePlainDateTime("2026-03-08T02:30"))).toBe(
+      "2026-03-08T02:30:00.000",
+    );
+    for (const input of ["02:30:", "02:30.123", "2:30", "02:3", "0230", "02:30:0"]) {
+      expectDateTimeError(() => parsePlainTime(input), "INVALID_ISO");
+      expectDateTimeError(() => parsePlainDateTime(`2026-03-08T${input}`), "INVALID_ISO");
+    }
+    expectDateTimeError(() => parsePlainTime("24:00"), "OUT_OF_RANGE");
+    expectDateTimeError(() => parseInstant("2026-03-08T02:30Z"), "INVALID_ISO");
+    expectDateTimeError(
+      () => parseZonedDateTime("2026-03-08T02:30-05:00[America/New_York]"),
+      "INVALID_ISO",
+    );
+  });
+
   it("parses and serializes the zoned subset", () => {
     const value = parseZonedDateTime("2026-08-10T08:34:56.123-04:00[America/New_York]");
     expect(toZonedDateTimeString(value)).toBe("2026-08-10T08:34:56.123-04:00[America/New_York]");

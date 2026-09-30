@@ -25,6 +25,7 @@ Branch: main
 - Site layout at 390px and 1440px, keyboard focus visibility, reduced motion, and unavailable clipboard access.
 - Leap years, year 0000, year 9999, invalid month/day/time, and unsafe integers.
 - Millisecond precision and non-zero finer fractions.
+- `HH:MM` accepted by the plain time parsers only; partial forms (`HH:MM:`, `HH:MM.fff`, one-digit fields) rejected.
 - New York hour gaps/overlaps, Lord Howe half-hour changes, and Apia date-line changes.
 - Santiago days with no local midnight and Havana days with a repeated one: the start is the first real instant for every `disambiguation` value, and adjacent units neither overlap nor leave a gap. Year 0000/9999 unit boundaries.
 - Offset/zone mismatch policies and unknown zones.

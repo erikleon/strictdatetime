@@ -29,10 +29,14 @@ import {
 
 const DATE = "(\\d{4})-(\\d{2})-(\\d{2})";
 const TIME = "(\\d{2}):(\\d{2}):(\\d{2})(?:\\.(\\d+))?";
+// Plain values also take ISO 8601 reduced precision `HH:MM`, the form an HTML datetime-local or
+// time input produces when seconds are zero. Instants and zoned values keep the RFC 3339 / RFC 9557
+// grammar, which requires seconds.
+const PLAIN_TIME = "(\\d{2}):(\\d{2})(?::(\\d{2})(?:\\.(\\d+))?)?";
 const OFFSET = "(Z|[+-]\\d{2}:\\d{2})";
 const DATE_RE = new RegExp(`^${DATE}$`);
-const TIME_RE = new RegExp(`^${TIME}$`);
-const DATE_TIME_RE = new RegExp(`^${DATE}T${TIME}$`);
+const TIME_RE = new RegExp(`^${PLAIN_TIME}$`);
+const DATE_TIME_RE = new RegExp(`^${DATE}T${PLAIN_TIME}$`);
 const INSTANT_RE = new RegExp(`^${DATE}T${TIME}${OFFSET}$`);
 const ZONED_RE = new RegExp(`^${DATE}T${TIME}${OFFSET}\\[([^\\[\\]!]+)\\]$`);
 
@@ -65,7 +69,7 @@ function timeFromMatch(match: RegExpExecArray, offset: number): PlainTime {
   return createPlainTime({
     hour: Number(match[offset]),
     minute: Number(match[offset + 1]),
-    second: Number(match[offset + 2]),
+    second: Number(match[offset + 2] ?? 0),
     millisecond: milliseconds(match[offset + 3]),
   });
 }

@@ -40,6 +40,8 @@ import {
 } from "../src/index.js";
 import { defined, expectDateTimeError } from "./helpers.js";
 
+const DISAMBIGUATIONS = ["reject", "compatible", "earlier", "later"] as const;
+
 const instant = (value: string) => parseInstant(value);
 const zoned = (wall: string, zone = "America/New_York") =>
   resolveZonedDateTime(parsePlainDateTime(wall), zone);
@@ -611,22 +613,58 @@ describe("unit boundaries", () => {
     expect(zonedDateTimeIntervalContains(span, span.end)).toBe(false);
   });
 
-  it("rejects a missing local midnight unless disambiguation is explicit", () => {
+  it("starts a day with a missing midnight at the first real instant", () => {
     // Santiago skips 2026-09-06T00:00 local, jumping from 23:59:59.999-04:00 to 01:00-03:00.
     const value = resolveZonedDateTime(
       parsePlainDateTime("2026-09-06T12:00:00.000"),
       "America/Santiago",
     );
-    expectDateTimeError(() => startOfZonedDateTimeUnit(value, "day"), "NONEXISTENT_TIME");
+    for (const options of [undefined, ...DISAMBIGUATIONS.map((d) => ({ disambiguation: d }))]) {
+      expect(toZonedDateTimeString(startOfZonedDateTimeUnit(value, "day", options))).toBe(
+        "2026-09-06T01:00:00.000-03:00[America/Santiago]",
+      );
+      expect(toZonedDateTimeString(endOfZonedDateTimeUnit(value, "day", options))).toBe(
+        "2026-09-07T00:00:00.000-03:00[America/Santiago]",
+      );
+    }
+    // The last half hour of Sep 5 belongs to Sep 5, not Sep 6.
+    const lateEvening = resolveZonedDateTime(
+      parsePlainDateTime("2026-09-05T23:30:00.000"),
+      "America/Santiago",
+    );
     expect(
-      toZonedDateTimeString(startOfZonedDateTimeUnit(value, "day", { disambiguation: "later" })),
-    ).toBe("2026-09-06T01:00:00.000-03:00[America/Santiago]");
-    expect(
-      toZonedDateTimeString(startOfZonedDateTimeUnit(value, "day", { disambiguation: "earlier" })),
-    ).toBe("2026-09-05T23:00:00.000-04:00[America/Santiago]");
-    expect(
-      toZonedDateTimeString(endOfZonedDateTimeUnit(value, "day", { disambiguation: "later" })),
-    ).toBe("2026-09-07T00:00:00.000-03:00[America/Santiago]");
+      zonedDateTimeIntervalContains(zonedDateTimeUnitInterval(value, "day"), lateEvening),
+    ).toBe(false);
+    expect(toZonedDateTimeString(endOfZonedDateTimeUnit(lateEvening, "day"))).toBe(
+      "2026-09-06T01:00:00.000-03:00[America/Santiago]",
+    );
+  });
+
+  it("starts a day with a repeated midnight at its first occurrence", () => {
+    // Havana repeats 2026-11-01T00:00 local: first at -04:00, then again at -05:00.
+    const value = resolveZonedDateTime(
+      parsePlainDateTime("2026-11-01T12:00:00.000"),
+      "America/Havana",
+    );
+    for (const options of [undefined, ...DISAMBIGUATIONS.map((d) => ({ disambiguation: d }))]) {
+      expect(toZonedDateTimeString(startOfZonedDateTimeUnit(value, "day", options))).toBe(
+        "2026-11-01T00:00:00.000-04:00[America/Havana]",
+      );
+    }
+    const span = zonedDateTimeUnitInterval(value, "day");
+    expect(zonedDateTimeIntervalDuration(span).milliseconds).toBe(25 * 3_600_000);
+  });
+
+  it("still validates the ignored disambiguation option", () => {
+    const value = zoned("2026-03-08T15:00:00.000");
+    expectDateTimeError(
+      () => startOfZonedDateTimeUnit(value, "day", { disambiguation: "nearest" as never }),
+      "INVALID_OPTION",
+    );
+    expectDateTimeError(
+      () => endOfZonedDateTimeUnit(value, "day", { disambiguation: "nearest" as never }),
+      "INVALID_OPTION",
+    );
   });
 
   it("covers every instant exactly once across adjacent units", () => {

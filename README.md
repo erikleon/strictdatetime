@@ -67,9 +67,12 @@ the end of `2026-05-04` is `2026-05-05T00:00:00.000`, which is what makes
 `zonedDateTimeUnitInterval` cover the unit exactly. Weeks start on Monday unless `weekStart` says
 otherwise (ISO numbering, Sunday is 7).
 
-Zoned boundaries resolve the truncated wall time back through the zone. Local midnight does not
-exist on every calendar day, so a zone that skips it rejects by default and needs an explicit
-`disambiguation`.
+Zoned boundaries are the first real instant of the unit. Local midnight does not exist on every
+calendar day: Santiago skips it on 2026-09-06, so that day starts at `01:00-03:00`. Havana repeats
+it on 2026-11-01, so that day starts at the first `00:00`, at `-04:00`. Adjacent zoned units never
+overlap and never leave a gap. A boundary has one correct answer, so the `disambiguation` option is
+validated but has no effect here (since 1.4.0; before, a skipped midnight rejected by default, and
+`"earlier"` returned a time on the previous day).
 
 `instantIntervalIntersection` and `zonedDateTimeIntervalIntersection` return the shared part of two
 ranges, or `undefined` when they share no instant. `instantIntervalGap` and

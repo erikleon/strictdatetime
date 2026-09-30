@@ -70,7 +70,13 @@ export interface UnitBoundaryOptions {
   readonly weekStart?: WeekStart;
 }
 
-export interface ZonedUnitBoundaryOptions extends UnitBoundaryOptions, ResolutionOptions {}
+export interface ZonedUnitBoundaryOptions extends UnitBoundaryOptions {
+  /**
+   * @deprecated Since 1.4.0 a unit boundary is always the unit's first real instant, so this has
+   * no effect. It is still validated, so an unsupported value keeps failing with INVALID_OPTION.
+   */
+  readonly disambiguation?: Disambiguation;
+}
 
 export interface FormatOptions {
   readonly locales?: Intl.LocalesArgument;

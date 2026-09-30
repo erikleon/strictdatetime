@@ -26,7 +26,7 @@ Branch: main
 - Leap years, year 0000, year 9999, invalid month/day/time, and unsafe integers.
 - Millisecond precision and non-zero finer fractions.
 - New York hour gaps/overlaps, Lord Howe half-hour changes, and Apia date-line changes.
-- Santiago days with no local midnight, adjacent unit intervals, and year 0000/9999 unit boundaries.
+- Santiago days with no local midnight and Havana days with a repeated one: the start is the first real instant for every `disambiguation` value, and adjacent units neither overlap nor leave a gap. Year 0000/9999 unit boundaries.
 - Offset/zone mismatch policies and unknown zones.
 - Host tzdb variation across Node, Chromium, Firefox, and WebKit.
 - Cache eviction, package size, and bounded resolution work.

@@ -188,6 +188,21 @@ export function resolveZonedDateTime(
   return createZonedDateTime({ epochMilliseconds: selected, timeZone: zone });
 }
 
+/** Rejects an unsupported `disambiguation` value without using it. */
+export function validateDisambiguation(options?: ResolutionOptions): void {
+  disambiguation(options);
+}
+
+/**
+ * The first real instant at or after a wall-clock boundary: forward out of a skipped time, and the
+ * first of a repeated one. A unit boundary has exactly one right answer, so it never takes a
+ * policy; `"earlier"` would put the boundary inside the previous unit, `"later"` would move part of
+ * the unit into the one before it, and `"reject"` would refuse a boundary that is well defined.
+ */
+export function resolveBoundary(plain: PlainDateTime, timeZone: string): ZonedDateTime {
+  return resolveZonedDateTime(plain, timeZone, { disambiguation: "compatible" });
+}
+
 export function zonedDateTimeFromInstant(instant: Instant, timeZone: string): ZonedDateTime {
   const value = assertInstant(instant);
   const zone = normalizeTimeZone(timeZone);

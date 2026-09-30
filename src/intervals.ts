@@ -22,7 +22,12 @@ import {
   ownRecord,
   plainDateTimeFromUtcEpoch,
 } from "./values.js";
-import { projectInstant, resolveZonedDateTime, zonedDateTimeFromInstant } from "./zones.js";
+import {
+  projectInstant,
+  resolveBoundary,
+  validateDisambiguation,
+  zonedDateTimeFromInstant,
+} from "./zones.js";
 
 const UNITS: readonly string[] = [
   "year",
@@ -511,18 +516,22 @@ export function endOfPlainDateTimeUnit(
 }
 
 /**
- * Wall-clock boundary resolved back into the zone. Midnight does not exist on every calendar day,
- * so this rejects by default and needs an explicit `disambiguation` where a zone skips it.
+ * The unit's first instant: the wall-clock boundary resolved back into the zone. Where the zone
+ * skips that wall time (Santiago's missing midnight), the start is the first real instant after
+ * the gap; where it repeats (Havana's doubled midnight), the start is the first occurrence. So
+ * adjacent units never overlap and every instant belongs to exactly one unit. `disambiguation` is
+ * validated but has no effect.
  */
 export function startOfZonedDateTimeUnit(
   value: ZonedDateTime,
   unit: IntervalUnit,
   options?: ZonedUnitBoundaryOptions,
 ): ZonedDateTime {
+  validateDisambiguation(options);
   const zoned = assertZonedDateTime(value);
   const plain = projectInstant(zoned.epochMilliseconds, zoned.timeZone);
   const start = startOfPlain(plain, assertUnit(unit), weekStartOption(options));
-  return resolveZonedDateTime(start, zoned.timeZone, options);
+  return resolveBoundary(start, zoned.timeZone);
 }
 
 /** Exclusive end, matching {@link endOfPlainDateTimeUnit}. */
@@ -531,11 +540,12 @@ export function endOfZonedDateTimeUnit(
   unit: IntervalUnit,
   options?: ZonedUnitBoundaryOptions,
 ): ZonedDateTime {
+  validateDisambiguation(options);
   const checked = assertUnit(unit);
   const zoned = assertZonedDateTime(value);
   const plain = projectInstant(zoned.epochMilliseconds, zoned.timeZone);
   const start = startOfPlain(plain, checked, weekStartOption(options));
-  return resolveZonedDateTime(nextPlainStart(start, checked), zoned.timeZone, options);
+  return resolveBoundary(nextPlainStart(start, checked), zoned.timeZone);
 }
 
 export function zonedDateTimeUnitInterval(

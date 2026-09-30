@@ -111,4 +111,5 @@ export {
   resolveZonedDateTime,
   withTimeZone,
   zonedDateTimeFromInstant,
+  zonedDateTimeFromPlainDate,
 } from "./zones.js";

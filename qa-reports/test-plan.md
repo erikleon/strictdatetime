@@ -27,6 +27,7 @@ Branch: main
 - Millisecond precision and non-zero finer fractions.
 - `HH:MM` accepted by the plain time parsers only; partial forms (`HH:MM:`, `HH:MM.fff`, one-digit fields) rejected.
 - New York hour gaps/overlaps, Lord Howe half-hour changes, and Apia date-line changes.
+- The start of a calendar date in a zone: ordinary days, skipped and repeated midnights, and the whole day Apia skipped on 2011-12-30.
 - Santiago days with no local midnight and Havana days with a repeated one: the start is the first real instant for every `disambiguation` value, and adjacent units neither overlap nor leave a gap. Year 0000/9999 unit boundaries.
 - Offset/zone mismatch policies and unknown zones.
 - Host tzdb variation across Node, Chromium, Firefox, and WebKit.

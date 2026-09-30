@@ -3,6 +3,7 @@ import {
   createInstant,
   normalizeTimeZone,
   parseInstant,
+  parsePlainDate,
   parsePlainDateTime,
   projectInstant,
   resolveZonedDateTime,
@@ -10,6 +11,7 @@ import {
   toZonedDateTimeString,
   withTimeZone,
   zonedDateTimeFromInstant,
+  zonedDateTimeFromPlainDate,
 } from "../src/index.js";
 import { expectDateTimeError } from "./helpers.js";
 
@@ -126,6 +128,50 @@ describe("time zones", () => {
     expectDateTimeError(
       () => zonedDateTimeFromInstant(parseInstant("1969-01-01T00:00:00.000Z"), "America/New_York"),
       "OUT_OF_RANGE",
+    );
+  });
+});
+
+describe("zonedDateTimeFromPlainDate", () => {
+  const start = (date: string, zone: string) =>
+    toZonedDateTimeString(zonedDateTimeFromPlainDate(parsePlainDate(date), zone));
+
+  it("gives local midnight on an ordinary day", () => {
+    expect(start("2026-09-24", "America/Los_Angeles")).toBe(
+      "2026-09-24T00:00:00.000-07:00[America/Los_Angeles]",
+    );
+    expect(start("0001-01-01", "+05:30")).toBe("0001-01-01T00:00:00.000+05:30[+05:30]");
+  });
+
+  it("starts after a skipped midnight and at the first of a repeated one", () => {
+    expect(start("2026-09-06", "America/Santiago")).toBe(
+      "2026-09-06T01:00:00.000-03:00[America/Santiago]",
+    );
+    expect(start("2026-11-01", "America/Havana")).toBe(
+      "2026-11-01T00:00:00.000-04:00[America/Havana]",
+    );
+  });
+
+  it("rejects a date the zone skips entirely", () => {
+    expectDateTimeError(
+      () => zonedDateTimeFromPlainDate(parsePlainDate("2011-12-30"), "Pacific/Apia"),
+      "NONEXISTENT_TIME",
+    );
+    expect(start("2011-12-31", "Pacific/Apia")).toBe("2011-12-31T00:00:00.000+14:00[Pacific/Apia]");
+  });
+
+  it("rejects invalid input", () => {
+    expectDateTimeError(
+      () => zonedDateTimeFromPlainDate(parsePlainDateTime("2026-09-24T00:00") as never, "UTC"),
+      "INVALID_RECORD",
+    );
+    expectDateTimeError(
+      () => zonedDateTimeFromPlainDate(parsePlainDate("1969-12-31"), "America/New_York"),
+      "OUT_OF_RANGE",
+    );
+    expectDateTimeError(
+      () => zonedDateTimeFromPlainDate(parsePlainDate("2026-09-24"), "Mars/Olympus"),
+      "INVALID_ZONE",
     );
   });
 });

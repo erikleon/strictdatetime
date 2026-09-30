@@ -3,12 +3,14 @@ import { fail } from "./errors.js";
 import type {
   Disambiguation,
   Instant,
+  PlainDate,
   PlainDateTime,
   ResolutionOptions,
   ZonedDateTime,
 } from "./types.js";
 import {
   assertInstant,
+  assertPlainDate,
   assertPlainDateTime,
   assertZonedDateTime,
   createZonedDateTime,
@@ -201,6 +203,25 @@ export function validateDisambiguation(options?: ResolutionOptions): void {
  */
 export function resolveBoundary(plain: PlainDateTime, timeZone: string): ZonedDateTime {
   return resolveZonedDateTime(plain, timeZone, { disambiguation: "compatible" });
+}
+
+/**
+ * The first instant of a calendar date in a zone, like Temporal's `PlainDate.toZonedDateTime`.
+ * Where the zone skips midnight, the date starts at the first real instant after the gap. A date
+ * the zone skips entirely (Pacific/Apia, 2011-12-30) has no first instant and fails with
+ * NONEXISTENT_TIME.
+ */
+export function zonedDateTimeFromPlainDate(date: PlainDate, timeZone: string): ZonedDateTime {
+  const { year, month, day } = assertPlainDate(date);
+  const start = resolveBoundary(
+    { year, month, day, hour: 0, minute: 0, second: 0, millisecond: 0 },
+    timeZone,
+  );
+  const local = projectInstant(start.epochMilliseconds, start.timeZone);
+  if (local.year !== year || local.month !== month || local.day !== day) {
+    fail("NONEXISTENT_TIME", "Calendar date does not exist in this time zone");
+  }
+  return start;
 }
 
 export function zonedDateTimeFromInstant(instant: Instant, timeZone: string): ZonedDateTime {

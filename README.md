@@ -76,6 +76,10 @@ overlap and never leave a gap. A boundary has one correct answer, so the `disamb
 validated but has no effect here (since 1.4.0; before, a skipped midnight rejected by default, and
 `"earlier"` returned a time on the previous day).
 
+`zonedDateTimeFromPlainDate(date, zone)` gives the first instant of a calendar date by the same
+rule, for example to turn a date picked in a form into "from the start of that day, locally". A
+date the zone skips entirely (Pacific/Apia on 2011-12-30) fails with `NONEXISTENT_TIME`.
+
 `instantIntervalIntersection` and `zonedDateTimeIntervalIntersection` return the shared part of two
 ranges, or `undefined` when they share no instant. `instantIntervalGap` and
 `zonedDateTimeIntervalGap` return the range strictly between two disjoint ranges, or `undefined`
